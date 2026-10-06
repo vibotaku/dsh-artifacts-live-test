@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'" data-dsh-artifacts>
+<meta name="robots" content="noindex, nofollow" data-dsh-artifacts>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample Sales Dashboard — FY2025</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f8fa;
+    --panel: #ffffff;
+    --fg: #1f2328;
+    --muted: #59636e;
+    --accent: #0969da;
+    --border: #d1d9e0;
+    --grid: rgba(31, 35, 40, .10);
+    --c1: #0969da; --c2: #1a7f37; --c3: #9a6700; --c4: #8250df;
+    --shadow: 0 1px 2px rgba(31, 35, 40, .06), 0 3px 12px rgba(31, 35, 40, .05);
+    --up: #1a7f37; --down: #cf222e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --panel: #161b22; --fg: #e6edf3; --muted: #9198a1;
+      --accent: #4493f8; --border: #30363d; --grid: rgba(230, 237, 243, .12);
+      --c1: #4493f8; --c2: #3fb950; --c3: #d29922; --c4: #a371f7;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+      --up: #3fb950; --down: #f85149;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 70rem; margin: 0 auto; padding: 2.5rem 1.15rem 4rem; }
+  header.page { border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+  h1 { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem); line-height: 1.2; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0; max-width: 62ch; }
+  .tag {
+    display: inline-block; font-size: .74rem; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    padding: .15rem .5rem; border-radius: 999px; margin-bottom: .6rem;
+  }
+  section { margin-top: 2.5rem; }
+  h2 { font-size: 1.15rem; margin: 0 0 .35rem; letter-spacing: -.01em; }
+  .hint { color: var(--muted); font-size: .9rem; margin: 0 0 1rem; max-width: 70ch; }
+
+  .kpis { display: grid; gap: .85rem; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.05rem; box-shadow: var(--shadow); }
+  .kpi .label { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .kpi .value { font-size: 1.65rem; font-weight: 700; letter-spacing: -.02em; margin: .3rem 0 .15rem; font-variant-numeric: tabular-nums; }
+  .delta { font-size: .85rem; font-weight: 600; }
+  .delta.up { color: var(--up); }
+  .delta.down { color: var(--down); }
+  .delta .vs { color: var(--muted); font-weight: 400; }
+
+  .cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.15rem 1.25rem; box-shadow: var(--shadow); min-width: 0; }
+  .card h3 { margin: 0; font-size: 1rem; }
+  .card .meta { color: var(--muted); font-size: .85rem; margin: .2rem 0 .8rem; }
+  .canvas-wrap { position: relative; height: 290px; }
+  .canvas-wrap.tall { height: 340px; }
+
+  .table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: .92rem; }
+  caption { text-align: left; color: var(--muted); font-size: .85rem; padding: .85rem 1rem 0; }
+  th, td { padding: .6rem .9rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); position: sticky; top: 0; background: var(--panel); }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  tfoot td { font-weight: 700; border-top: 2px solid var(--border); }
+  .swatch { display: inline-block; width: .6rem; height: .6rem; border-radius: 2px; margin-right: .45rem; vertical-align: baseline; }
+  .share { display: flex; align-items: center; gap: .5rem; }
+  .bar { height: .45rem; border-radius: 999px; background: var(--c1); min-width: 2px; }
+  .bar-cell { width: 34%; min-width: 90px; }
+
+  details { margin-top: 1rem; }
+  summary { cursor: pointer; color: var(--accent); font-size: .9rem; font-weight: 600; }
+  summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .note { margin-top: 2.25rem; padding: .9rem 1.1rem; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 0 8px 8px 0; color: var(--muted); font-size: .9rem; }
+  footer { margin-top: 2rem; color: var(--muted); font-size: .82rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<main>
+  <header class="page">
+    <span class="tag">Sample data</span>
+    <h1>Sample Sales Dashboard — FY2025</h1>
+    <p class="sub">Twelve months of fictional revenue for a four-product B2B software line, broken out by product and region. All figures are made up for demonstration; nothing here comes from a real company.</p>
+  </header>
+
+  <section aria-labelledby="kpi-h">
+    <h2 id="kpi-h">Headline metrics</h2>
+    <p class="hint">Full-year 2025, compared with 2024.</p>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section aria-labelledby="trend-h">
+    <h2 id="trend-h">Trends</h2>
+    <p class="hint">Monthly revenue against the quarterly target, product mix, and regional split.</p>
+    <div class="cards">
+      <div class="card" style="grid-column: 1 / -1;">
+        <h3>Monthly revenue vs. target</h3>
+        <p class="meta">Quarterly target shown as a step line, in USD thousands</p>
+        <div class="canvas-wrap tall"><canvas id="revenueChart" role="img" aria-label="Bar chart of monthly revenue from January to December 2025, with quarterly target shown as a step line."></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Revenue by product</h3>
+        <p class="meta">Share of FY2025 total</p>
+        <div class="canvas-wrap"><canvas id="productChart" role="img" aria-label="Doughnut chart of FY2025 revenue share by product."></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Revenue by region</h3>
+        <p class="meta">FY2025, USD thousands</p>
+        <div class="canvas-wrap"><canvas id="regionChart" role="img" aria-label="Horizontal bar chart of FY2025 revenue by region."></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="table-h">
+    <h2 id="table-h">Product performance</h2>
+    <p class="hint">The same numbers as the charts above, plus year-over-year change.</p>
+    <div class="table-wrap">
+      <table id="productTable">
+        <caption>FY2025 revenue by product, with 2024 comparison</caption>
+        <thead>
+          <tr>
+            <th scope="col">Product</th>
+            <th scope="col" class="num">Revenue 2024</th>
+            <th scope="col" class="num">Revenue 2025</th>
+            <th scope="col" class="num">YoY change</th>
+            <th scope="col" class="num">Share of 2025</th>
+            <th scope="col" class="bar-cell">Share</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="data-h">
+    <h2 id="data-h">Underlying data</h2>
+    <p class="hint">Everything on this page is generated from the two tables below.</p>
+    <details>
+      <summary>Monthly revenue and quarterly target (USD thousands)</summary>
+      <div class="table-wrap" style="margin-top:.75rem">
+        <table id="monthTable">
+          <thead>
+            <tr><th scope="col">Month</th><th scope="col" class="num">Revenue</th><th scope="col" class="num">Quarter</th><th scope="col" class="num">Target</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+    <details>
+      <summary>Weekly orders (count)</summary>
+      <div class="table-wrap" style="margin-top:.75rem">
+        <table id="weekTable">
+          <thead><tr><th scope="col">Week</th><th scope="col" class="num">Orders</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <p class="note"><strong>About this page:</strong> a demonstration dashboard built entirely from fabricated data. Figures are internally consistent — totals, shares, and percentages are computed in the browser from the tables in "Underlying data". Hypothetical targets do not reflect any real sales plan.</p>
+
+  <footer>Sample sales dashboard · FY2025 · generated <span id="built"></span> · charts by Chart.js 4.4.4 via jsDelivr</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---- Fabricated sample data (USD thousands) -----------------------------
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const monthRevenue = [268, 291, 337, 302, 318, 361, 334, 349, 402, 388, 421, 507];
+  const quarterTarget = [880, 980, 1080, 1300]; // Q1..Q4, monthly target = /3
+
+  const products = [
+    { name: "CloudSync Pro", rev2025: 1587, rev2024: 1214, color: "var(--c1)" },
+    { name: "DataForge",     rev2025: 1164, rev2024: 1032, color: "var(--c2)" },
+    { name: "Insight Lite",  rev2025:  842, rev2024:  735, color: "var(--c3)" },
+    { name: "SecureVault",   rev2025:  684, rev2024:  491, color: "var(--c4)" }
+  ];
+
+  const regions = [
+    { name: "North America", value: 1836 },
+    { name: "Europe",        value: 1210 },
+    { name: "Asia Pacific",  value:  792 },
+    { name: "Latin America", value:  349 },
+    { name: "Middle East & Africa", value: 90 }
+  ];
+
+  const weeklyOrders = [232, 268, 301, 287, 254, 312, 348, 331, 296, 355, 372, 401, 388, 344, 419, 462];
+
+  // ---- Derived totals -----------------------------------------------------
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const total2025 = sum(products.map(p => p.rev2025));
+  const total2024 = sum(products.map(p => p.rev2024));
+  const totalOrders = sum(weeklyOrders);
+  const yoy = (total2025 - total2024) / total2024;
+  const thisYear = new Date().getFullYear();
+
+  const money = (n) => "$" + n.toLocaleString("en-US");
+  const pct = (n, d) => (n * 100).toFixed(d === undefined ? 1 : d) + "%";
+
+  // ---- KPI cards ----------------------------------------------------------
+  const kpis = [
+    { label: "FY2025 revenue", value: money(total2025 * 1000), delta: pct(yoy), dir: "up", vs: "vs. FY2024" },
+    { label: "Orders", value: totalOrders.toLocaleString("en-US"), delta: "+" + pct(0.124), dir: "up", vs: "vs. FY2024" },
+    { label: "Average order value", value: "$" + Math.round(total2025 * 1000 / totalOrders).toLocaleString("en-US"), delta: "+" + pct(0.052), dir: "up", vs: "vs. FY2024" },
+    { label: "Top region", value: regions[0].name, delta: pct(regions[0].value / sum(regions.map(r => r.value))), dir: "up", vs: "of revenue" }
+  ];
+  document.getElementById("kpis").innerHTML = kpis.map(k => `
+    <div class="kpi">
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}</div>
+      <div class="delta ${k.dir}">${k.delta} <span class="vs">${k.vs}</span></div>
+    </div>`).join("");
+
+  // ---- Product table ------------------------------------------------------
+  const tbody = document.querySelector("#productTable tbody");
+  tbody.innerHTML = products.map(p => {
+    const share = p.rev2025 / total2025;
+    const change = (p.rev2025 - p.rev2024) / p.rev2024;
+    return `<tr>
+      <th scope="row" style="font-weight:600"><span class="swatch" style="background:${p.color}"></span>${p.name}</th>
+      <td class="num">${money(p.rev2024 * 1000)}</td>
+      <td class="num">${money(p.rev2025 * 1000)}</td>
+      <td class="num" style="color:var(${change >= 0 ? "--up" : "--down"});font-weight:600">${change >= 0 ? "+" : ""}${pct(change)}</td>
+      <td class="num">${pct(share)}</td>
+      <td class="bar-cell"><span class="share"><span class="bar" style="background:${p.color};width:${(share * 100).toFixed(1)}%"></span><span style="color:var(--muted);font-size:.82rem">${pct(share)}</span></span></td>
+    </tr>`;
+  }).join("");
+  document.querySelector("#productTable tfoot").innerHTML = `<tr>
+    <td>Total</td>
+    <td class="num">${money(total2024 * 1000)}</td>
+    <td class="num">${money(total2025 * 1000)}</td>
+    <td class="num" style="color:var(--up)">+${pct(yoy)}</td>
+    <td class="num">100.0%</td>
+    <td class="bar-cell"></td>
+  </tr>`;
+
+  // ---- Data tables --------------------------------------------------------
+  document.querySelector("#monthTable tbody").innerHTML = months.map((m, i) => {
+    const q = Math.floor(i / 3);
+    const rev = "$" + (monthRevenue[i] * 1000).toLocaleString("en-US");
+    const tgt = "$" + Math.round((quarterTarget[q] / 3) * 1000).toLocaleString("en-US");
+    return `<tr><td>${m} 2025</td><td class="num">${rev}</td>
+      <td class="num">Q${q + 1}</td><td class="num">${tgt}</td></tr>`;
+  }).join("");
+  document.querySelector("#weekTable tbody").innerHTML = weeklyOrders
+    .map((o, i) => `<tr><td>Week ${i + 1}</td><td class="num">${o}</td></tr>`).join("");
+
+  document.getElementById("built").textContent = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  // ---- Charts -------------------------------------------------------------
+  if (typeof Chart === "undefined") {
+    document.querySelectorAll(".canvas-wrap").forEach(el => {
+      el.innerHTML = '<p style="color:var(--muted);font-size:.9rem">Chart library unavailable — see the tables below for the same data.</p>';
+    });
+    return;
+  }
+
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  const fmtK = (n) => "$" + n.toLocaleString("en-US") + "k";
+  Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  Chart.defaults.color = v("--muted");
+
+  const axis = {
+    grid: { color: v("--grid"), drawTicks: false },
+    border: { display: false },
+    ticks: { padding: 6 }
+  };
+  const legend = { position: "bottom", labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true, pointStyle: "rectRounded", padding: 16 } };
+  const tooltip = {
+    backgroundColor: v("--panel"), titleColor: v("--fg"), bodyColor: v("--fg"),
+    borderColor: v("--border"), borderWidth: 1, padding: 10, displayColors: true, cornerRadius: 8
+  };
+
+  // Monthly revenue vs. quarterly target
+  const targetLine = months.map((_, i) => quarterTarget[Math.floor(i / 3)] / 3);
+  new Chart(document.getElementById("revenueChart"), {
+    data: {
+      labels: months,
+      datasets: [
+        {
+          type: "bar", label: "Monthly revenue", data: monthRevenue,
+          backgroundColor: v("--c1"), borderRadius: 5, maxBarThickness: 46
+        },
+        {
+          type: "line", label: "Quarterly target (monthly pace)", data: targetLine,
+          borderColor: v("--c3"), backgroundColor: v("--c3"), borderWidth: 2,
+          borderDash: [6, 4], pointRadius: 0, stepped: "middle", tension: 0, fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend,
+        tooltip: Object.assign({}, tooltip, { callbacks: { label: (c) => " " + c.dataset.label + ": " + fmtK(c.parsed.y) } })
+      },
+      scales: {
+        x: Object.assign({}, axis),
+        y: Object.assign({}, axis, {
+          beginAtZero: true,
+          title: { display: true, text: "Revenue (USD thousands)", color: v("--muted") },
+          ticks: { padding: 6, callback: (val) => "$" + val + "k" }
+        })
+      }
+    }
+  });
+
+  // Revenue by product
+  new Chart(document.getElementById("productChart"), {
+    type: "doughnut",
+    data: {
+      labels: products.map(p => p.name),
+      datasets: [{
+        data: products.map(p => p.rev2025),
+        backgroundColor: [v("--c1"), v("--c2"), v("--c3"), v("--c4")],
+        borderColor: v("--panel"), borderWidth: 2, hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: "58%",
+      plugins: {
+        legend,
+        tooltip: Object.assign({}, tooltip, {
+          callbacks: {
+            label: (c) => " " + c.label + ": " + fmtK(c.parsed) + " (" + pct(c.parsed / total2025) + ")"
+          }
+        })
+      }
+    }
+  });
+
+  // Revenue by region
+  new Chart(document.getElementById("regionChart"), {
+    type: "bar",
+    data: {
+      labels: regions.map(r => r.name),
+      datasets: [{
+        label: "FY2025 revenue", data: regions.map(r => r.value),
+        backgroundColor: v("--c2"), borderRadius: 5, maxBarThickness: 26
+      }]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: Object.assign({}, tooltip, {
+          callbacks: { label: (c) => " " + fmtK(c.parsed.x) + " · " + pct(c.parsed.x / sum(regions.map(r => r.value))) }
+        })
+      },
+      scales: {
+        x: Object.assign({}, axis, {
+          beginAtZero: true,
+          title: { display: true, text: "Revenue (USD thousands)", color: v("--muted") },
+          ticks: { padding: 6, callback: (val) => "$" + val + "k" }
+        }),
+        y: Object.assign({}, axis, { grid: { display: false }, border: { display: false } })
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
