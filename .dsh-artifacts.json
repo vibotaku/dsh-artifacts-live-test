@@ -15,6 +15,18 @@
         "source.md"
       ],
       "description": "Live test markdown document"
+    },
+    "live-test-page-lh43bv": {
+      "id": "live-test-page-lh43bv",
+      "title": "Live Test Page",
+      "kind": "html",
+      "createdAt": "2026-10-06T00:22:14.999Z",
+      "updatedAt": "2026-10-06T00:22:14.999Z",
+      "rev": 1,
+      "files": [
+        "index.html"
+      ],
+      "description": "Live test HTML page"
     }
   },
   "tombstones": []
