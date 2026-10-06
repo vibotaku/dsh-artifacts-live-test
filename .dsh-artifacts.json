@@ -1,18 +1,6 @@
 {
   "version": 1,
   "artifacts": {
-    "linked-repo-demo": {
-      "id": "linked-repo-demo",
-      "title": "Linked repo demo",
-      "kind": "html",
-      "createdAt": "2026-10-06T04:50:29.410Z",
-      "updatedAt": "2026-10-06T04:50:29.410Z",
-      "rev": 1,
-      "files": [
-        "index.html"
-      ],
-      "description": "Demo of the shared (linked) repository strategy"
-    },
     "live-report": {
       "id": "live-report",
       "title": "Live Test Report",
@@ -42,6 +30,7 @@
   },
   "tombstones": [
     "delete-test-page",
+    "linked-repo-demo",
     "live-test-page-lh43bv"
   ]
 }
