@@ -1,6 +1,18 @@
 {
   "version": 1,
   "artifacts": {
+    "delete-test-page": {
+      "id": "delete-test-page",
+      "title": "Delete test page",
+      "kind": "html",
+      "createdAt": "2026-10-06T06:09:06.707Z",
+      "updatedAt": "2026-10-06T06:09:06.707Z",
+      "rev": 1,
+      "files": [
+        "index.html"
+      ],
+      "description": "Throwaway page to verify deletion from the Artifacts panel"
+    },
     "linked-repo-demo": {
       "id": "linked-repo-demo",
       "title": "Linked repo demo",
