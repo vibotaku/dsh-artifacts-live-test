@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "artifacts": {
+    "live-report": {
+      "id": "live-report",
+      "title": "Live Test Report",
+      "kind": "markdown",
+      "createdAt": "2026-10-06T00:22:11.675Z",
+      "updatedAt": "2026-10-06T00:22:11.675Z",
+      "rev": 1,
+      "files": [
+        "dot.png",
+        "img/logo.svg",
+        "index.html",
+        "source.md"
+      ],
+      "description": "Live test markdown document"
+    }
+  },
+  "tombstones": []
+}
